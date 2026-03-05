@@ -698,10 +698,10 @@
             <th rowspan="1" class="sort-th" data-col="0" data-asc="true" onclick="sortAblation(0)">Lateral Controller </th>
             <th rowspan="1">Online Velocity Replanning </th>
             <th rowspan="1">g-g-v Type </th>
-            <th rowspan="2">Max v [m/s] </th>
-            <th rowspan="2">Max a<sub>x</sub> [m/s<sup>2</sup>] </th>
-            <th rowspan="2">Max a<sub>y</sub> [m/s<sup>2</sup>] </th>
-            <th rowspan="2">Lap Time [s]</th>
+            <th rowspan="1">Max v [m/s] </th>
+            <th rowspan="1">Max a<sub>x</sub> [m/s<sup>2</sup>] </th>
+            <th rowspan="1">Max a<sub>y</sub> [m/s<sup>2</sup>] </th>
+            <th rowspan="1">Lap Time [s]</th>
           </tr>
         </thead>
         <tbody id="TrackB-tbody"></tbody>
@@ -968,7 +968,6 @@ const TrackA_ROWS = [
       const [Controller,Mean,Max,LapTime,RMS] = row;
       html += "<tr>";
       html += `
-    <td>${Controller}</td>
     <td>${Mean === bestPathTrackVals_mean ? "<b>"+Mean.toFixed(4)+"</b>" : Mean.toFixed(4)}</td>
     <td>${Max === bestPathTrackVals_Max ? "<b>"+Max.toFixed(4)+"</b>" : Max.toFixed(4)}</td>
     <td>${LapTime === bestLapTime ? "<b>"+LapTime.toFixed(4)+"</b>" : LapTime.toFixed(4)}</td>
@@ -1025,10 +1024,12 @@ const TrackB_ROWS = [
     let html = '';
     let lastTier = null;
     rows.forEach(row => {
-      const [Controller,Planner,Type,Max_v,Max_ax,Max_ay,LapTime] = row;
+      const [Controller,Planner,Type,Max_v,Max_ax,Max_ay,LapTime,showDataset] = row;
       html += "<tr>";
+            if(showDataset){
+      html += `<td rowspan="4">${Controller}</td>`;
+    }
       html += `
-    <td>${Controller}</td>
     <td>${Planner}</td>
     <td>${Type}</td>
     <td>${Max_v === bestMax_v ? "<b>"+Max_v.toFixed(4)+"</b>" : Max_v.toFixed(4)}</td>
