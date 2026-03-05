@@ -822,18 +822,18 @@
   // col indices: 0=ID(num),1=CP,2=CoT,3=ICL,4=CodeICL,5=DocICL,
   //              6=CSR,7=RT,8=Tokens,9=RL,10=TI,11=TM,12=DO,13=EN,14=SQ,15=FA
   // "lower is better" columns: 7=RT, 8=Tokens
-  const LOWER_BETTER = new Set([3, 4]);
+  const LOWER_BETTER = new Set([2,3]);
 
   const ABLATION_ROWS = [
-    // [id, cp, cot, icl, codeicl, docicl, csr,   rt,     tokens, rl,    ti,    tm,    do_,   en,    sq,    fa,    tier]
-    ['Training', 'Baseline [19]','0.0357','0.0454', true],
-    ['Training',  'Extended (ours)','0.0327','0.0359', false],
-    ['Validation',  'Baseline [19]','0.0365','0.0423', true],
-    ['Validation',  'Extended (ours)','0.0326','0.0327', false],
-    ];
+['Training','Baseline [19]',0.0357,0.0454,true],
+['Training','Extended (ours)',0.0327,0.0359,false],
+
+['Validation','Baseline [19]',0.0365,0.0423,true],
+['Validation','Extended (ours)',0.0326,0.0327,false],
+];
 
   let ablationSortCol = null;
-  let ablationSortAsc = false;
+  let ablationSortAsc = true;
 
   function sortAblation(col) {
     if (ablationSortCol === col) {
@@ -843,16 +843,6 @@
       ablationSortCol = col;
     }
     renderAblation();
-    // update header highlights
-    document.querySelectorAll('#ablation-table .sort-th').forEach(th => {
-      th.classList.remove('sort-active');
-      th.querySelector('.sort-icon').textContent = '⇅';
-    });
-    const activeTh = document.querySelector(`#ablation-table .sort-th[data-col="${col}"]`);
-    if (activeTh) {
-      activeTh.classList.add('sort-active');
-      activeTh.querySelector('.sort-icon').textContent = ablationSortAsc ? '▲' : '▼';
-    }
   }
 
   function numVal(row, col) {
@@ -863,76 +853,39 @@
   function renderAblation() {
     const tbody = document.getElementById('ablation-tbody');
     let rows = [...ABLATION_ROWS];
-
-    // Compute per-column best values for highlighting (aggregate metrics + FA)
-    const numCols = [3,4];
-    const best = {};
-    numCols.forEach(c => {
-      const vals = rows.map(r => numVal(r, c)).filter(v => !isNaN(v));
-      if (vals.length) best[c] = LOWER_BETTER.has(c) ? Math.min(...vals) : Math.max(...vals);
-    });
-
     // Sort
     if (ablationSortCol !== null) {
       rows.sort((a, b) => {
-        const av = ablationSortCol === 0 ? parseInt(a[0].replace(/\D/g,'')) : numVal(a, ablationSortCol);
-        const bv = ablationSortCol === 0 ? parseInt(b[0].replace(/\D/g,'')) : numVal(b, ablationSortCol);
-        if (isNaN(av) && isNaN(bv)) return 0;
-        if (isNaN(av)) return 1;
-        if (isNaN(bv)) return -1;
-        return ablationSortAsc ? av - bv : bv - av;
+      let av = a[ablationSortCol];
+      let bv = b[ablationSortCol];
+
+      if(typeof av === "string") return 0;
+
+      return ablationSortAsc ? av-bv : bv-av;
       });
     }
 
-    // Compute rank for sorted numeric col (shown as badge)
-    const rankMap = {};
-    if (ablationSortCol !== null && ablationSortCol !== 0) {
-      const sorted = [...rows].filter(r => !isNaN(numVal(r, ablationSortCol)));
-      sorted.sort((a,b) => {
-        const av = numVal(a, ablationSortCol), bv = numVal(b, ablationSortCol);
-        return LOWER_BETTER.has(ablationSortCol) ? av - bv : bv - av;
-      });
-      sorted.forEach((r, i) => { rankMap[r[0]] = i + 1; });
-    }
+    const rmseVals = rows.map(r=>r[2]);
+    const fvuVals = rows.map(r=>r[3]);
 
-    // Group by tier only when no sort active (original order)
-    const showTiers = ablationSortCol === null || ablationSortCol === 0;
+    const bestRMSE = Math.min(...rmseVals);
+    const bestFVU = Math.min(...fvuVals);
 
     let html = '';
     let lastTier = null;
     rows.forEach(row => {
-      const [Dataset, MSNN, RMSE, FVU] = row;
-      if (showTiers && tier !== lastTier) {
-        html += `<tr class="tier-row"><td colspan="16"><em>${tier}</em></td></tr>`;
-        lastTier = tier;
-      }
-      const isBest = id === 'C11';
-      const rank = rankMap[id];
-      const rankBadge = rank ? `<span class="cell-rank">#${rank}</span>` : '';
-      const fmt = (v, col) => {
-        if (v === null) return '—';
-        if (typeof v === 'string') return v;
-        const isBestVal = best[col] !== undefined && Math.abs(v - best[col]) < 0.001;
-        const val = v.toFixed(col === 8 ? 0 : 2);
-        if (isBestVal) return `<span class="cell-best">${val}</span>`;
-        return val;
-      };
-      const activeCol = ablationSortCol;
-      const highlight = (col) => col === activeCol ? 'background:rgba(99,179,237,0.08);' : '';
-      html += `<tr${isBest && showTiers ? ' class="best"' : ''}>
-        <td>${id}${rankBadge}</td>
-        <td>${cp}</td><td>${cot}</td><td>${icl}</td><td>${code}</td><td>${doc}</td>
-        <td style="${highlight(6)}">${fmt(csr,6)}</td>
-        <td style="${highlight(7)}">${fmt(rt,7)}</td>
-        <td style="${highlight(8)}">${fmt(tokens,8)}</td>
-        <td style="${highlight(9)}">${fmt(rl,9)}</td>
-        <td style="${highlight(10)}">${fmt(ti,10)}</td>
-        <td style="${highlight(11)}">${fmt(tm,11)}</td>
-        <td style="${highlight(12)}">${fmt(do_,12)}</td>
-        <td style="${highlight(13)}">${fmt(en,13)}</td>
-        <td style="${highlight(14)}">${fmt(sq,14)}</td>
-        <td style="${highlight(15)}">${fmt(fa,15)}</td>
-      </tr>`;
+      const [dataset,method,rmse,fvu,showDataset] = row;
+      html += "<tr>";
+      if(showDataset){
+      html += `<td rowspan="2">${dataset}</td>`;
+    }
+      html += `
+    <td>${method}</td>
+    <td>${rmse === bestRMSE ? "<b>"+rmse.toFixed(4)+"</b>" : rmse.toFixed(4)}</td>
+    <td>${fvu === bestFVU ? "<b>"+fvu.toFixed(4)+"</b>" : fvu.toFixed(4)}</td>
+    `;
+
+    html += "</tr>";
     });
     tbody.innerHTML = html;
   }
