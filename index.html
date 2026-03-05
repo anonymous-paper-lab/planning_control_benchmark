@@ -660,7 +660,7 @@
       <table id="ablation-table">
         <thead>
           <tr>
-            <th rowspan="1" class="sort-th" data-col="0" data-asc="true" onclick="sortAblation(0)">Dataset <span class="sort-icon">⇅</span></th>
+            <th rowspan="1" class="sort-th" data-col="0" data-asc="true" onclick="sortAblation(0)">Dataset</th>
             <th rowspan="1">MS-NN</th>
             <th rowspan="1">RMSE↓ [m]</th>
             <th rowspan="1">FVU↓ [-]</th>
@@ -672,15 +672,14 @@
 
     <!-- Track A -->
     <h3>Trajectory tracking on track A with the cautious raceline and without velocity replanning. Our MS-NN improves path tracking, lap times, and steering smoothness.</h3>
-    <p style="font-size:0.88rem;color:var(--muted);margin-bottom:8px;"> ↑ = higher is better, ↓ = lower is better.</p>
     <div class="table-wrap">
       <table id="TrackA-Table">
         <thead>
           <tr>
             <th rowspan="2" class="sort-th" data-col="0" data-asc="true" onclick="sortAblation(0)">Controller <span class="sort-icon">⇅</span></th>
             <th colspan="2" style="text-align:center;border-bottom:1px solid rgba(255,255,255,0.3);">Path Tracking [cm]</th>
-            <th rowspan="1">Lap Time [s] ↓ </th>
-            <th rowspan="1">RMS Steering Rate [rad/s] ↓ </th>
+            <th rowspan="2">Lap Time [s] ↓ </th>
+            <th rowspan="2">RMS Steering Rate [rad/s] ↓ </th>
           </tr>
           <tr>
             <th>Mean</th><th>Max</th>
@@ -690,7 +689,24 @@
       </table>
     </div>
 
-
+      <!-- Track B -->
+    <h3>Impact of online velocity replanning with FBGA on the closed-loop performance on track B. FBGA enables the use of the extended g-g-v constraints, leading to improved lap times. Best results are highlighted, second best are underlined.</h3>
+    <div class="table-wrap">
+      <table id="TrackB-Table">
+        <thead>
+          <tr>
+            <th rowspan="1" class="sort-th" data-col="0" data-asc="true" onclick="sortAblation(0)">Lateral Controller </th>
+            <th rowspan="1">Online Velocity Replanning </th>
+            <th rowspan="1">g-g-v Type </th>
+            <th rowspan="2">Max v [m/s] </th>
+            <th rowspan="2">Max a<sub>x</sub> [m/s<sup>2</sup>] </th>
+            <th rowspan="2">Max a<sub>y</sub> [m/s<sup>2</sup>] </th>
+            <th rowspan="2">Lap Time [s]</th>
+          </tr>
+        </thead>
+        <tbody id="TrackB-tbody"></tbody>
+      </table>
+    </div>
     
       <p class="subtitle has-text-centered">
        Track A: CL-based path tracking (without MS-NN steering controller and without FBGA velocity planning), with the cautious g-g-v, used to train the MS-NN steering controller.
@@ -854,7 +870,7 @@
 ];
 
   let ablationSortCol = null;
-  let ablationSortAsc = true;
+  let ablationSortAsc = false;
 
   function sortAblation(col) {
     if (ablationSortCol === col) {
@@ -936,6 +952,66 @@ const TrackA_ROWS = [
       });
     }
 
+    const PathTrackVals_mean = rows.map(r=>r[2]);
+    const LapTime = rows.map(r=>r[4]);
+    const PathTrackVals_Max = rows.map(r=>r[3]);
+    const RMS_steer = rows.map(r=>r[5]);
+    
+    const bestPathTrackVals_mean = Math.min(...PathTrackVals_mean);
+    const bestLapTime = Math.min(...LapTime);
+    const bestPathTrackVals_Max = Math.min(...PathTrackVals_Max);
+    const bestRMS_steer = Math.min(...RMS_steer);
+    
+    let html = '';
+    let lastTier = null;
+    rows.forEach(row => {
+      const [Controller,Mean,Max,LapTime,RMS] = row;
+      html += "<tr>";
+      html += `
+    <td>${Controller}</td>
+    <td>${PathTrackVals_mean === bestPathTrackVals_mean ? "<b>"+PathTrackVals_mean.toFixed(4)+"</b>" : PathTrackVals_mean.toFixed(4)}</td>
+    <td>${PathTrackVals_Max === bestPathTrackVals_Max ? "<b>"+PathTrackVals_Max.toFixed(4)+"</b>" : PathTrackVals_Max.toFixed(4)}</td>
+    <td>${LapTime === bestLapTime ? "<b>"+LapTime.toFixed(4)+"</b>" : LapTime.toFixed(4)}</td>
+    <td>${RMS_steer === bestRMS_steer ? "<b>"+RMS_steer.toFixed(4)+"</b>" : RMS_steer.toFixed(4)}</td>
+    `;
+
+    html += "</tr>";
+    });
+    tbody.innerHTML = html;
+  }
+
+  renderTrackA();
+
+
+
+
+const TrackB_ROWS = [
+['CL+MS-NN','no','nominal',4.001,2.096,5.915,6.842,true],
+['CL+MS-NN','no','extended',4.120,2.213,7.097,'- (crash)',false],
+['CL+MS-NN','yes (FBGA)','nominal',4.277,2.110,6.151,6.626,false],
+['CL+MS-NN','yes (FBGA)','extended',4.301,2.585,6.345,6.449,false],
+  
+['PP+MS-NN','no','nominal',4.007,2.671,6.639,6.643,true],
+['PP+MS-NN','no','extended',3.807,2.815,7.387,'- (crash)',false],
+['PP+MS-NN','yes (FBGA)','nominal',4.470,8.169,6.151,6.226,false],
+['PP+MS-NN','yes (FBGA)','extended',4.522,3.018,9.050,6.089,false],
+];
+  
+  function renderTrackB() {
+    const tbody = document.getElementById('TrackB-tbody');
+    let rows = [...TrackB_ROWS];
+    // Sort
+    if (ablationSortCol !== null) {
+      rows.sort((a, b) => {
+      let av = a[ablationSortCol];
+      let bv = b[ablationSortCol];
+
+      if(typeof av === "string") return 0;
+
+      return ablationSortAsc ? av-bv : bv-av;
+      });
+    }
+
     const rmseVals = rows.map(r=>r[2]);
     const fvuVals = rows.map(r=>r[3]);
 
@@ -962,11 +1038,6 @@ const TrackA_ROWS = [
   }
 
   renderTrackA();
-
-
-
-
-
 
 
 
