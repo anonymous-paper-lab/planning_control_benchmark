@@ -822,14 +822,14 @@
   // col indices: 0=ID(num),1=CP,2=CoT,3=ICL,4=CodeICL,5=DocICL,
   //              6=CSR,7=RT,8=Tokens,9=RL,10=TI,11=TM,12=DO,13=EN,14=SQ,15=FA
   // "lower is better" columns: 7=RT, 8=Tokens
-  const LOWER_BETTER = new Set([7, 8]);
+  const LOWER_BETTER = new Set([3, 4]);
 
   const ABLATION_ROWS = [
     // [id, cp, cot, icl, codeicl, docicl, csr,   rt,     tokens, rl,    ti,    tm,    do_,   en,    sq,    fa,    tier]
-    ['Training', 'Baseline [19]','0.0357','0.0454'],
-    ['Training',  'Extended (ours)','0.0327','0.0359'],
-    ['Validation',  'Baseline [19]','0.0365','0.0423'],
-    ['Validation',  'Extended (ours)','0.0326','0.0327'],
+    ['Training', 'Baseline [19]','0.0357','0.0454', true],
+    ['Training',  'Extended (ours)','0.0327','0.0359', false],
+    ['Validation',  'Baseline [19]','0.0365','0.0423', true],
+    ['Validation',  'Extended (ours)','0.0326','0.0327', false],
     ];
 
   let ablationSortCol = null;
@@ -865,7 +865,7 @@
     let rows = [...ABLATION_ROWS];
 
     // Compute per-column best values for highlighting (aggregate metrics + FA)
-    const numCols = [6,7,8,15];
+    const numCols = [3,4];
     const best = {};
     numCols.forEach(c => {
       const vals = rows.map(r => numVal(r, c)).filter(v => !isNaN(v));
@@ -901,7 +901,7 @@
     let html = '';
     let lastTier = null;
     rows.forEach(row => {
-      const [id, cp, cot, icl, code, doc, csr, rt, tokens, rl, ti, tm, do_, en, sq, fa, tier] = row;
+      const [Dataset, MSNN, RMSE, FVU] = row;
       if (showTiers && tier !== lastTier) {
         html += `<tr class="tier-row"><td colspan="16"><em>${tier}</em></td></tr>`;
         lastTier = tier;
