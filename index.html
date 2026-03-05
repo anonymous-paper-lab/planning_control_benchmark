@@ -968,9 +968,10 @@ const TrackA_ROWS = [
       const [Controller,Mean,Max,LapTime,RMS] = row;
       html += "<tr>";
       html += `
-    <td>${Mean === bestPathTrackVals_mean ? "<b>"+Mean.toFixed(4)+"</b>" : Mean.toFixed(4)}</td>
-    <td>${Max === bestPathTrackVals_Max ? "<b>"+Max.toFixed(4)+"</b>" : Max.toFixed(4)}</td>
-    <td>${LapTime === bestLapTime ? "<b>"+LapTime.toFixed(4)+"</b>" : LapTime.toFixed(4)}</td>
+    <td>${Controller}</td>
+    <td>${Mean === bestPathTrackVals_mean ? "<b>"+Mean.toFixed(2)+"</b>" : Mean.toFixed(2)}</td>
+    <td>${Max === bestPathTrackVals_Max ? "<b>"+Max.toFixed(2)+"</b>" : Max.toFixed(2)}</td>
+    <td>${LapTime === bestLapTime ? "<b>"+LapTime.toFixed(3)+"</b>" : LapTime.toFixed(3)}</td>
     <td>${RMS === bestRMS_steer ? "<b>"+RMS.toFixed(4)+"</b>" : RMS.toFixed(4)}</td>
     `;
 
@@ -1014,7 +1015,7 @@ const TrackB_ROWS = [
     const Max_v = rows.map(r=>r[3]);
     const Max_ax = rows.map(r=>r[4]);
     const Max_ay = rows.map(r=>r[5]);
-    const LapTime = rows.map(r=>r[6]);
+    const LapTime = rows.map(r=>r[6]).filter(v => typeof v === "number");
     
     const bestMax_v = Math.max(...Max_v);
     const bestMax_ax = Math.max(...Max_ax);
@@ -1032,12 +1033,15 @@ const TrackB_ROWS = [
       html += `
     <td>${Planner}</td>
     <td>${Type}</td>
-    <td>${Max_v === bestMax_v ? "<b>"+Max_v.toFixed(4)+"</b>" : Max_v.toFixed(4)}</td>
-    <td>${Max_ax === bestMax_ax ? "<b>"+Max_ax.toFixed(4)+"</b>" : Max_ax.toFixed(4)}</td>
-    <td>${Max_ay === bestMax_ay ? "<b>"+Max_ay.toFixed(4)+"</b>" : Max_ay.toFixed(4)}</td>
-    <td>${LapTime === bestLapTime ? "<b>"+LapTime.toFixed(4)+"</b>" : LapTime.toFixed(4)}</td>
+    <td>${Max_v === bestMax_v ? "<b>"+Max_v.toFixed(3)+"</b>" : Max_v.toFixed(3)}</td>
+    <td>${Max_ax === bestMax_ax ? "<b>"+Max_ax.toFixed(3)+"</b>" : Max_ax.toFixed(3)}</td>
+    <td>${Max_ay === bestMax_ay ? "<b>"+Max_ay.toFixed(3)+"</b>" : Max_ay.toFixed(3)}</td>
+    <td>${
+    typeof LapTime === "number"
+    ? (LapTime === bestLapTime ? "<b>"+LapTime.toFixed(3)+"</b>" : LapTime.toFixed(3))
+    : LapTime
+    }</td>
     `;
-
     html += "</tr>";
     });
     tbody.innerHTML = html;
